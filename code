@@ -1,0 +1,94 @@
+# 파이썬
+
+![image.png](attachment:78508c71-338d-41d8-a81f-31156b0e8534:image.png)
+
+```jsx
+import serial
+
+ser = serial.Serial('/dev/ttyS0', 9600, timeout = 1)
+
+ser.write(b'Hello, World!')
+
+data = ser.read(15)
+print(data)
+
+ser.close()
+```
+
+![image.png](attachment:cfb14626-e8c2-4666-8425-bca67982c10a:image.png)
+
+# c++
+
+![image.png](attachment:7de47c7f-0cce-4d62-98fd-8cf065927717:image.png)
+
+![image.png](attachment:d0c37ace-c115-4c53-a42e-f1c11c48488c:image.png)
+
+```c
+#include <iostream>
+#include <fcntl.h>
+#include <unistd.h>
+#include <termios.h>
+#include <cstring>
+
+int main() {
+    // 시리얼 포트 열기
+    int serial_port = open("/dev/ttyS0", O_RDWR | O_NOCTTY);
+    if (serial_port == -1) {
+        std::cerr << "Failed to open serial port" << std::endl;
+        return 1;
+    }
+
+    // 시리얼 포트 설정
+    struct termios tty;
+    memset(&tty, 0, sizeof tty);
+
+    if (tcgetattr(serial_port, &tty) != 0) {
+        std::cerr << "Error getting terminal attributes" << std::endl;
+        close(serial_port);
+        return 1;
+    }
+
+    cfsetospeed(&tty, B9600);
+    cfsetispeed(&tty, B9600);
+
+    tty.c_cflag |= (CLOCAL | CREAD);  
+    tty.c_cflag &= ~PARENB;  
+    tty.c_cflag &= ~CSTOPB;  
+    tty.c_cflag &= ~CSIZE;
+    tty.c_cflag |= CS8;    
+
+    tty.c_lflag = 0;
+    tty.c_oflag = 0;
+    tty.c_iflag = 0;
+
+    tty.c_cc[VMIN] = 0;
+    tty.c_cc[VTIME] = 10;
+
+    if (tcsetattr(serial_port, TCSANOW, &tty) != 0) {
+        std::cerr << "Error setting terminal attributes" << std::endl;
+        close(serial_port);
+        return 1;
+    }
+
+    // 데이터 전송
+    const char *msg = "Hello, World!";
+    write(serial_port, msg, strlen(msg));
+
+    // 데이터 수신
+    char read_buf[15] = {0};
+    int num_bytes = read(serial_port, read_buf, sizeof(read_buf) - 1);
+
+    if (num_bytes < 0) {
+        std::cerr << "Error reading from serial port" << std::endl;
+    } else {
+        std::cout << "Received: " << read_buf << std::endl;
+    }
+
+    // 시리얼 포트 닫기
+    close(serial_port);
+    return 0;
+}
+
+```
+
+# c코드
